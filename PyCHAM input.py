@@ -6,20 +6,41 @@ import numpy as np
 ### Manual Input #############################################################################################
 ##############################################################################################################
 
+# Set working directory
+import os
+path = r'C:\Users\janet\Documents\nBox\SOAFP\6. PyCHAM simulation\Input'
+os.chdir(path)
+
 # Input time manually
 start_time = pd.to_datetime('2020-11-17 09:00:00')
-end_time = pd.to_datetime('2020-11-18 09:00:00')
+end_time = pd.to_datetime('2020-11-17 15:00:00')
 
 # Input file_name for model variable input
 file_name = "run_particle.txt"
 
+###
+# EDIT: To import all data from individual csv files for smaller size file
 # Enter file location for hourly data and particle data here
-file_location = r"C:\Users\Aldrian Jerriko\Desktop\Aerosol\PyCHAM Inputs\PyCHAM inputs_BN2.xlsx"
-file_particle = r"C:\Users\Aldrian Jerriko\Desktop\Aerosol\SMPS.csv"
+#file_location = r"C:\Users\janet\Desktop\working folder\19 Aug 2021 Inputs\PyCHAM inputs.xlsx"
+###
 
 # Insert the desired the species
-
-species_list = ["Chloromethane", "Butene", "Dimethyl.Sulfide", "Isoprene", "Dichloro.methane", "Toluene", "Styrene", "Xylene", "Trimethylbenzene", "Pinene", "NO2", "O3", "SO2"]
+# In total there are 40 overlapping species between MCM inventory and PTR-MS
+# 40 VOC species include those with isomers
+# Xylene = o-xylene, TMB = TM124B, Pinene = a-pinene, Butene = mepropene, Pentene = trans-2-pentene
+# Butanol was not measured in 2011-2012
+# 4 inorganic species
+species_list = ["Chloromethane", "Dimethyl.Sulfide", "Isoprene", "Dichloro.methane", "Acetone", #5
+                "Toluene", "Styrene", "Acetaldehyde","Acetic.acid","Acetic.anhydride", #10
+                "Acrolein","Acrylic.acid","Benzene","Butanone","Catechol", #15
+                "Cresol","Ethanol","Ethyl.nitrate","Formaldehyde","Formic.acid", #20
+                "Hexanal","Methanesulfonic.acid","Methyl.nitrate","MVK","p.Benzoquinone", #25
+                "Pentanal","Peroxyacetyl.Nitrate","Phenol","Pinic.acid","Pinonic.acid", #30
+                "Propene","Propyl.acetate","Pyruvic.acid","Acetol", #34
+                # 6 species with isomers
+                "Xylene", "Trimethylbenzene", "Pinene", "Butene", "Pentene", "Butanol", #40
+                "NO2", "O3", "SO2", "CO"] # Inorganic species
+inorganic_list = ["NO2", "O3", "SO2", "CO"]
 
 ## Toggle particle consideration
 toggle_particle = True
@@ -30,63 +51,77 @@ toggle_log = True
 # Enter number_size_bins
 number_size_bins = 5
 
-# Set upper and lower bounds
-lower_part_size = 13.6
-upper_part_size = 790
+# Set upper and lower bounds (um)
+lower_part_size = 0.0136*1000
+upper_part_size = 0.790*1000
 
 #######################################################################################################################
 #######################################################################################################################
 
+###
+# EDIT: To import all data from individual csv files for smaller size file
 # Read Excel File For Concentration Data
-wb = pd.read_excel(file_location, sheet_name = None)
-for key in wb.keys():
-    wb[key].to_csv(('%s.csv' %key))
+#wb = pd.read_excel(file_location, sheet_name = None)
+#for key in wb.keys():
+#    wb[key].to_csv(('%s.csv' %key))
+###
 
 # Read csv file for the Particle Size
 if toggle_particle == True :
-    pb = pd.read_csv(file_particle, delimiter = ";", dtype = object)
+    file_particle = r"SMPS.csv"
+    pb = pd.read_csv(file_particle, delimiter = ",", dtype = object)
 
 # Processing for time and temperature
-
-time_and_temperature = wb["Meteorology"][["Date&Time", "Air Temp (oC)"]]
+#time_and_temperature = wb["Meteorology"]
+#time_and_temperature = wb["Meteorology"][["Date&Time", "Air Temp (oC)"]]
+Meteorology = pd.read_csv("Meteorology.csv",index_col = 0,delimiter=",")
+time_and_temperature = Meteorology[["Date&Time", "Air Temp (oC)"]]
 time_and_temperature = time_and_temperature.dropna()
 time_and_temperature.index = pd.to_datetime(time_and_temperature.pop("Date&Time"))
 
 # Processing for time and Rh
-
-time_and_Rh = wb["Meteorology"][["Date&Time", "Relative Humidity (%)"]]
+#time_and_Rh = wb["Meteorology"][["Date&Time", "Relative Humidity (%)"]]
+time_and_Rh = Meteorology[["Date&Time", "Relative Humidity (%)"]]
 time_and_Rh = time_and_Rh.dropna()
 time_and_Rh.index = pd.to_datetime(time_and_Rh.pop("Date&Time"))
 
 # Processing input names
-
-input_names = wb["Species as inputs"]
+#input_names = wb["Species as inputs"]
+input_names = pd.read_csv("Species as inputs.csv",index_col = 0,delimiter=",")
 input_names = input_names[input_names["Required unit"] == "ppb"]
 mcm = dict(zip(input_names["Inputs"], input_names["Name in MCM"]))
-mcm_hourly_data = {x: mcm[x] for x in mcm if x not in {"O3","CO","NO2","SO2"}}
+mcm_hourly_data = {x: mcm[x] for x in mcm if x not in inorganic_list}
 
-# Processing input hourly data
+# Double check number of species
+mcm_keys = [x for x in enumerate(mcm) if x in species_list]
+if len(mcm_keys) == 0: print("All species are accounted for")
 
-hourly_data = wb["Hourly data"]
+# Processing input hourly VOC data
+#hourly_data = wb["Hourly data"]
+hourly_data = pd.read_csv("Hourly data.csv",index_col = 0,delimiter=",")
 hourly_data.index = pd.to_datetime(hourly_data.pop("DateTime"))
 hourly_data = hourly_data[mcm_hourly_data.keys()]
 hourly_data = hourly_data.loc[~hourly_data.index.duplicated(keep='first')]
 
-# Processing NO2, CO, O3, SO2
-
-no2 = wb["NO2"]
+# Processing hourly NO2, CO, O3, SO2 
+# Note that CO, O3 and SO2 has to be converted to hourly from NEA average data first
+#no2 = wb["NO2"]
+no2 = pd.read_csv("NO2.csv",index_col = 0,delimiter=",")
 no2.index = pd.to_datetime(no2.pop("Date").astype(str) + " " + no2.pop("Time").astype(str))
 no2 = no2.loc[~no2.index.duplicated(keep='first')]
 
-co = wb["CO"]
+#co = wb["CO"]
+co = pd.read_csv("CO.csv",index_col = 0,delimiter=",")
 co.index = pd.to_datetime(co.pop("Date&Time"))
 co = co.loc[~co.index.duplicated(keep='first')]
 
-o3 = wb["O3"]
+#o3 = wb["O3"]
+o3 = pd.read_csv("O3.csv",index_col = 0,delimiter=",")
 o3.index = pd.to_datetime(o3.pop("Date&Time"))
 o3 = o3.loc[~o3.index.duplicated(keep='first')]
 
-so2 = wb["MARGA"][["DateTime", "SO2 (ug/m3)"]]
+#so2 = wb["SO2"][["DateTime", "SO2"]]
+so2 = pd.read_csv("SO2.csv",index_col = 0,delimiter=",")
 so2.index = pd.to_datetime(so2.pop("DateTime"))
 so2 = so2.loc[~so2.index.duplicated(keep='first')]
 
@@ -115,21 +150,48 @@ result = result[species_list]
 
 # Particle processing
 particle = pb
-particle.index = pd.to_datetime(particle.pop("Date").astype(str) + " " + particle.pop("Start Time").astype(str), errors='ignore')
+#particle.index = pd.to_datetime(particle.pop("Date").astype(str) + " " + particle.pop("Start Time").astype(str), errors='ignore')
+particle.index = pd.to_datetime(particle.pop("DateTime"))
 particle = particle.loc[~particle.index.duplicated(keep='first')]
-particle = particle.iloc[:, 6:]
+#particle = particle.iloc[:, 0:]
 
 # Set the bin spacing
 if toggle_log == True:
-    interval = np.logspace(math.log10(lower_part_size), math.log10(upper_part_size), num=(number_size_bins + 1))
+    # logarithmic method
+	rad_bounds = 10.0**(np.linspace(np.log10(lower_part_size), 
+						np.log10(upper_part_size), num=(number_size_bins+1)))
+	rwid = (rad_bounds[1::]-rad_bounds[0:-1]) # width of size bins (um)
+	x_output = rad_bounds[0:-1]+rwid/2.0 # particle radius (um)
+        
+    #interval = np.logspace(math.log10(lower_part_size), math.log10(upper_part_size), num=(number_size_bins + 1))
 else:
-    interval = np.linspace(particle.columns[0], particle.columns[-1], num=number_size_bins)
-
+    #interval = np.linspace(particle.columns[0], particle.columns[-1], num=number_size_bins)
+    rad_bounds = np.linspace(lower_part_size, upper_part_size, (number_size_bins+1))
+	# width of size bins (um)
+    rwid = np.array((rad_bounds[1]-rad_bounds[0])).reshape(1)
+    x_output = rad_bounds[0:-1]+rwid/2.0 # particle radius (um)
+# ---------------------------------------
+# enhance upper radius bound (um) to reduce possibility of particles growing beyond 
+# this (reversed in saving.py)
+upper_bin_rad_amp = 1.0e6
+rad_bounds[-1] = rad_bounds[-1]*upper_bin_rad_amp
+    
 # Create a deep copy
 conv_particle = particle.copy()
 conv_particle = conv_particle.iloc[:,:0]
 
-
+'''
+# if number concentration (#/cc (air)) explicitly stated in inputs
+pmode = 1
+if (pmode == 1):
+    Nperbin = np.array((pconc))
+    Nperbin = Nperbin.reshape(-1, 1) # ensure correct shape
+	# volume of single particles per size bin (um3) - use with lognormal method
+    Varr = ((4.0*np.pi)/3.0)*(x_output**3.0)
+	# volume bounds (um3)
+    V_bounds = ((4.0*np.pi)/3.0)*(rad_bounds**3.0)
+'''
+'''
 # Classify according to size
 for bounds in interval:
     temp = np.zeros(len(particle.index))
@@ -138,6 +200,23 @@ for bounds in interval:
             temp = np.add(temp, (particle.pop(size).astype(float)))
             break
     conv_particle["%f" %(bounds)] = temp
+'''
+# Classify according to size
+i=0
+while i < (len(rad_bounds)-1):
+    temp = np.zeros(len(particle.index))
+    lower_bound = rad_bounds[i]
+    upper_bound = rad_bounds[i+1]
+    #print(lower_bound, upper_bound)
+    for size in particle.columns:
+        #size = particle.columns[0]
+#if (abs(bounds - float(size)) > 1e-8):
+        if (float(size) >= lower_bound and float(size) < upper_bound):
+            temp = np.add(temp, (particle.pop(size).astype(float)))
+            break
+    conv_particle["%f" %(x_output[i])] = temp
+    i=i+1
+    #print (i)
 
 
 # Set index to seconds
