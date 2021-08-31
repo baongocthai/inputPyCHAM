@@ -212,8 +212,8 @@ while i < (len(rad_bounds)-1):
         #size = particle.columns[0]
 #if (abs(bounds - float(size)) > 1e-8):
         if (float(size) >= lower_bound and float(size) < upper_bound):
-            temp = np.add(temp, (particle.pop(size).astype(float)))
-            break
+            temp = np.add(temp, particle[size].astype(float))
+            #break
     conv_particle["%f" %(x_output[i])] = temp
     i=i+1
     #print (i)
