@@ -352,18 +352,6 @@ if toggle_log == False:
 else:
     f.write("space_mode = log\n")
 
-# Write mean_rad
-f.write("mean_rad = ")
-for i in range(len(conv_particle.index) - 1):
-    f.write("%f; " %((upper_part_size + lower_part_size)/2))
-f.write("%f\n" %((upper_part_size + lower_part_size)/2))
-
-# Write std
-f.write("std = ")
-for i in range(len(conv_particle.index) - 1):
-    f.write("%f; " %(1.2))
-f.write("%f\n" %(1.2))
-
 # Write pcont
 f.write("pcont = ")
 for i in range(len(conv_particle.index) - 1):
