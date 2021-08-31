@@ -243,7 +243,7 @@ date_time_temperature = np.array(time_and_temperature.index)
 time_seconds_temperature = np.divide((np.subtract(date_time_temperature, np.datetime64(start_time))), 1E9)
 air_temp = np.add(np.array(time_and_temperature["Air Temp (oC)"]), 273.15)
 
-temperature_array = np.array([time_seconds_temperature,air_temp]) 
+temperature_array = np.array([time_seconds_temperature,air_temp], dtype = object) 
 
 # Write
 f.write("temperature = ")
@@ -264,7 +264,7 @@ date_time_Rh = np.array(time_and_Rh.index)
 time_seconds_Rh = np.divide((np.subtract(date_time_Rh, np.datetime64(start_time))), 1E9)
 air_Rh = np.divide(np.array(time_and_Rh["Relative Humidity (%)"]), 100)
 
-Rh_array = np.array([time_seconds_Rh,air_Rh])
+Rh_array = np.array([time_seconds_Rh,air_Rh], dtype = object)
 
 # Write
 f.write("rh = ")
