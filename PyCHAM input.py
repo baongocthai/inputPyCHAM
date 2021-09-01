@@ -163,7 +163,7 @@ while i < (len(rad_bounds)-1):
     i=i+1
 
 # Set index to seconds
-conv_particle = conv_particle.sort_index().loc[start_time:end_time]
+conv_particle = conv_particle.loc[start_time:end_time]
 date_time_part = np.array(conv_particle.index)
 time_seconds_part = (np.divide((np.subtract(date_time_part, np.datetime64(start_time))), 1E9)).astype(int)
 conv_particle = conv_particle.reset_index(drop=True)
