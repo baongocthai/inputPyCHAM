@@ -8,7 +8,7 @@ import numpy as np
 
 # Set working directory
 import os
-path = r'C:\Users\janet\Documents\nBox\SOAFP\6. PyCHAM simulation\Input'
+path = r'C:\Users\Aldrian Jerriko\Desktop\New Input Code'
 os.chdir(path)
 
 # Input time manually
@@ -86,30 +86,30 @@ if len(mcm_keys) == 0: print("All species are accounted for")
 
 # Processing input hourly VOC data
 hourly_data = pd.read_csv("Hourly data.csv",index_col = 0,delimiter=",")
-hourly_data.index = pd.to_datetime(hourly_data.pop("DateTime"))
+hourly_data.index = pd.to_datetime(hourly_data.pop("DateTime"), format='%Y-%m-%d %H:%M:%S')
 hourly_data = hourly_data[mcm_hourly_data.keys()]
 hourly_data = hourly_data.loc[~hourly_data.index.duplicated(keep='first')]
 
 # Processing hourly NO2, CO, O3, SO2 
 # Note that CO, O3 and SO2 has to be converted to hourly from NEA average data first
 no2 = pd.read_csv("NO2.csv",index_col = 0,delimiter=",")
-no2.index = pd.to_datetime(no2.pop("Date").astype(str) + " " + no2.pop("Time").astype(str))
+no2.index = pd.to_datetime(no2.pop("Date").astype(str) + " " + no2.pop("Time").astype(str), format='%d/%m/%Y %H:%M:%S')
 no2 = no2.loc[~no2.index.duplicated(keep='first')]
 
 co = pd.read_csv("CO.csv",index_col = 0,delimiter=",")
-co.index = pd.to_datetime(co.pop("Date&Time"))
+co.index = pd.to_datetime(co.pop("Date&Time"), format='%d/%m/%Y %H:%M')
 co = co.loc[~co.index.duplicated(keep='first')]
 
 o3 = pd.read_csv("O3.csv",index_col = 0,delimiter=",")
-o3.index = pd.to_datetime(o3.pop("Date&Time"))
+o3.index = pd.to_datetime(o3.pop("Date&Time"), format='%d/%m/%Y %H:%M')
 o3 = o3.loc[~o3.index.duplicated(keep='first')]
 
 so2 = pd.read_csv("SO2.csv",index_col = 0,delimiter=",")
-so2.index = pd.to_datetime(so2.pop("DateTime"))
+so2.index = pd.to_datetime(so2.pop("DateTime"), format='%d/%m/%Y %H:%M')
 so2 = so2.loc[~so2.index.duplicated(keep='first')]
 
 # Combine inputs
-result = pd.concat([hourly_data, no2, co, o3, so2, time_and_temperature], axis=1)
+result = hourly_data.join([no2, co, o3, so2, time_and_temperature], how="outer")
 result = result.rename(columns = {'NO2 (ug/m3)': 'NO2', 'Hourly CO (mg/m3)': \
     'CO', 'Hourly O3 (ug/m3)': 'O3', 'SO2 (ug/m3)': 'SO2'}, inplace = False)
 result = result[start_time:end_time].fillna(0)
@@ -125,7 +125,7 @@ result = result[species_list]
 
 # Particle processing
 particle = pb
-particle.index = pd.to_datetime(particle.pop("DateTime"))
+particle.index = pd.to_datetime(particle.pop("DateTime"), format='%Y-%m-%d %H:%M:%S')
 particle = particle.loc[~particle.index.duplicated(keep='first')]
 
 # Set the bin spacing
