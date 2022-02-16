@@ -62,10 +62,20 @@ coag_on = 1
 tracked_comp = "OH, O3, HONO"
 
 # species with constant concentration
-const_comp = ""
+# these 25 species are not measured in 2011-2012, hence not estimated for
+# these 25 species are measured in TD-GC/MS
+# Therefore, the median concentration of these 25 species for 9 days in Sep.-Oct. 2021 are used and set as constant
+const_comp = ["BENZAL", "BUTACID", "C5H11CHO", "C6H13CHO", "CYHEXONE", "DCBENE", "DIETETHER", "DIME35EB", "DMC", "ETHACET",  #10
+            "HEX1ENE", "HEX3ONE", "IPROPOL", "LIMONENE", "M3F", "MACR", "METHACET", "MIBK", "MPRK", "NBUTACET", #20
+            "NC11H24", "NC12H26", "PENTACID", "SBUTACET", "THEX2ENE"] #25
 
 # Insert the desired the species
-
+# Overlapping species between PTRMS & TDGCMS, and required to use TDGCMS data has been scaled by a constant ratio
+# The ratio = median concentration (Sep.-Oct.2021, PTRMS) / median concentration (Sep.-Oct.2021, TDGCMS)
+# These 13 species are: total pentene, total trimethylbenzene, total xylene, total pinene, toluene, benzene, total butene, 
+# dichloromethane, isoprene, MVK, butanone (MEK),  nonanal, decanal
+# median dichloromethane (Sep.-Oct.2021, PTRMS) = 0 ppb => replace all values with median concentration (Sep.-Oct.2021, TDGCMS) 
+# nonanal and decanal arenot available in MCM inventory
 species_list = ["Chloromethane", "Dichloro.methane", "Ethyl.nitrate", "Pinic.acid", "Pinonic.acid",#5
                 "Dimethyl.Sulfide", 
                 "Isoprene", 
@@ -93,7 +103,8 @@ species_list = ["Chloromethane", "Dichloro.methane", "Ethyl.nitrate", "Pinic.aci
                 "C2H4", "EBENZ", "C2H2","IC4H10", "IC5H12", #75
                 "IC3H7NO3", "NC4H10", "NC10H22","NC7H16", "PBENZ",#80
                 "NC6H14", "NC9H20", "NC8H18", "NC5H12", "NC3H7NO3", #85
-                "C3H8","OETHTOL", "METHTOL", "PETHTOL",
+                "C3H8","OETHTOL", "METHTOL", "PETHTOL", #89
+                # "CHCL3", #90 can be estimated from 2011-2012
                 "NO2", "O3", "SO2", "CO"] # Inorganic species
 '''
 species_list = ['APINENE','Toluene', "C2H4", "Propene", "Formaldehyde", "OXYL", "Acetaldehyde", "C4H6", "Isoprene",
@@ -190,6 +201,8 @@ wb_so2 = wb_so2.loc[~wb_so2.index.duplicated(keep='first')]
 # Hourly temperature
 hourly_temperature = pd.read_csv("Hourly Meteorology.csv",index_col = 0,delimiter=",")
 hourly_temperature = hourly_temperature[["Date&Time", "Air Temp (oC)"]]
+hourly_temperature.index = pd.to_datetime(hourly_temperature.pop('Date&Time'),format = '%d/%m/%Y %H:%M')
+
 
 # Combine inputs
 result = wb_species.join([wb_no2, wb_co, wb_o3, wb_so2, hourly_temperature], how="outer")
@@ -293,7 +306,10 @@ f.write("coag_on = %d\n" %(coag_on))
 f.write("tracked_comp = %s\n" %(tracked_comp))
 
 # species with constant concentration
-f.write("const_comp = %s\n" %(const_comp))
+f.write("const_comp = ")
+for i in range(len(const_comp) -1):
+    f.write("%s, " %(const_comp[i]))
+f.write("%s\n" %(const_comp[len(const_comp) - 1]))
 
 # Turn off wall-partitioning
 f.write("wall_on = 0\n")
@@ -346,17 +362,30 @@ f.write("%d\n" %(Rh_array[0][len(Rh_array[0]) - 1]))
 
 # Write for C0 and Comp0
 c0 = result.iloc[0, :len(result.columns)]
-# Add OH concentration in C0
-c0['OH'] = 6.5e-5
+# Add constant concentration in C0
+c0_additional_name = pd.Series(["BENZAL", "BUTACID", "C5H11CHO", "C6H13CHO", "CYHEXONE", "DCBENE", "DIETETHER", "DIME35EB", "DMC", "ETHACET",  #10
+            "HEX1ENE", "HEX3ONE", "IPROPOL", "LIMONENE", "M3F", "MACR", "METHACET", "MIBK", "MPRK", "NBUTACET", #20
+            "NC11H24", "NC12H26", "PENTACID", "SBUTACET", "THEX2ENE", 'OH'])
+c0_additional_conc = pd.Series([0.09703243, 0, 0, 0.028099814, 0, 0.016587651, 0, 0, 0.01925449, 0, 0.266989242, 0, 0.081819296, 0.081030143, 
+        0.004791663, 0.009176899, 0.071893593, 0.136275387, 0.030715693, 0.071789396, 0.031384498, 0.047690948, 0, 0, 0, 6.5e-5])
+c0_combined = pd.concat([c0_additional_name, c0_additional_conc], axis=1)
+c0_combined.index = c0_combined[0]
+c0_combined = c0_combined[1]
+c0 = pd.concat([c0, c0_combined], axis=0)
+
 f.write("C0 = ")
 for i in range(len(c0) -1):
     f.write("%f, " %(c0[i]))
 f.write("%f\n" %(c0[len(c0) - 1]))
 
 f.write("Comp0 = ")
-for i in range(len(c0.index) -1):
-    f.write("%s, " %(mcm[c0.index[i]]))
-# Add in OH
+for i in range(len(species_list) -1):
+        f.write("%s, " %(mcm[c0.index[i]]))
+
+# Add in species with constant concentration
+for i in const_comp:
+    f.write("%s, " %i)
+# Add in for OH
 f.write("%s\n" %(c0.index[len(c0.index) - 1]))
 
 ### Processing for Ct, Compt, injectt
@@ -371,27 +400,7 @@ ct= ct.set_index(time_seconds_ct)
 ct = ct.loc[(ct != 0).any(axis=1)]
 ct_new = pd.DataFrame([ct.iloc[i] for i in range(len(ct)) if ct.index[i] in index])
 ct_new = ct_new.iloc[1: , :]
-'''
-# assume concentration for 1-min Inorganic species are the same as its hourly
-inorg = ct_new[inorganic_list]
-for i in range(len(inorg)):
-    if inorg.iloc[i].isna()[0] == False:
-        temp = inorg.iloc[i].tolist()
-    else:
-        inorg.iloc[i] = temp
-ct_new[inorganic_list] = inorg
 
-
-# assume missing concentration equals to previous timing
-organic_list = list(mcm_data.keys())
-org = ct_new[organic_list]
-for i in range(len(org)):
-    if org.iloc[i].isna()[0] == False:
-        temp = org.iloc[i].tolist()
-    else:
-        org.iloc[i] = temp
-ct_new[organic_list] = org
-'''
 # Write Ct
 f.write("Ct = ")
 last_col = ct_new.columns[-1]
