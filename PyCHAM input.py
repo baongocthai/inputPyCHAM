@@ -11,18 +11,18 @@ folder_name = r'C:\Users\janet\Documents\nBox\SOAFP\6. PyCHAM simulation\Input\I
 os.chdir(folder_name)
 
 # Input time manually: Format: 'year-month-day hour:minute:second')
-start_time = pd.to_datetime('2020-11-05 09:00:00')
-end_time = pd.to_datetime('2020-11-05 17:59:00')
+start_time = pd.to_datetime('2020-11-20 15:00:00')
+end_time = pd.to_datetime('2020-11-20 15:59:00')
 
 # Input file_name for model variable input
-file_name = "05Nov_0900_1759_20bins_89VOCs.txt"
+file_name = "20Nov_1500_1559_20bins.txt"
 
 # Desired VOC data resolution input. For example, input of VOC every 5 min
 resolution = 300 #every 5min
 index = list(range(0,(end_time.hour-start_time.hour+1)*60*60, resolution))
 
 # Enter number_size_bins
-number_size_bins = 164
+number_size_bins = 20
 
 # Set upper and lower bounds (um)
 lower_part_size = 0.002*1000
@@ -104,7 +104,7 @@ species_list = ["Chloromethane", "Dichloro.methane", "Ethyl.nitrate", "Pinic.aci
                 "IC3H7NO3", "NC4H10", "NC10H22","NC7H16", "PBENZ",#80
                 "NC6H14", "NC9H20", "NC8H18", "NC5H12", "NC3H7NO3", #85
                 "C3H8","OETHTOL", "METHTOL", "PETHTOL", #89
-                # "CHCL3", #90 can be estimated from 2011-2012
+                "CHCL3", #90 can be estimated from 2011-2012
                 "NO2", "O3", "SO2", "CO"] # Inorganic species
 '''
 species_list = ['APINENE','Toluene', "C2H4", "Propene", "Formaldehyde", "OXYL", "Acetaldehyde", "C4H6", "Isoprene",
@@ -174,7 +174,7 @@ if len(mcm_keys) == 0: print("All species are accounted for")
 # VOC_data = pd.read_csv("Minute data_BN2.csv",delimiter=",")
 wb_species.index = pd.to_datetime(wb_species.pop("DateTime"),format = '%d/%m/%Y %H:%M')
 # Replace all BD values to 0
-wb_species.replace({"BD":0},inplace=True)
+#wb_species.replace({"BD":0},inplace=True)
 wb_species = wb_species.astype(float)
 
 # Data check
@@ -307,6 +307,10 @@ f.write("tracked_comp = %s\n" %(tracked_comp))
 
 # species with constant concentration
 f.write("const_comp = ")
+for i in range(len(inorganic_list)):
+    if inorganic_list[i] != "O3":
+        f.write("%s, " %inorganic_list[i])
+
 for i in range(len(const_comp) -1):
     f.write("%s, " %(const_comp[i]))
 f.write("%s\n" %(const_comp[len(const_comp) - 1]))
@@ -366,8 +370,9 @@ c0 = result.iloc[0, :len(result.columns)]
 c0_additional_name = pd.Series(["BENZAL", "BUTACID", "C5H11CHO", "C6H13CHO", "CYHEXONE", "DCBENE", "DIETETHER", "DIME35EB", "DMC", "ETHACET",  #10
             "HEX1ENE", "HEX3ONE", "IPROPOL", "LIMONENE", "M3F", "MACR", "METHACET", "MIBK", "MPRK", "NBUTACET", #20
             "NC11H24", "NC12H26", "PENTACID", "SBUTACET", "THEX2ENE", 'OH'])
-c0_additional_conc = pd.Series([0.09703243, 0, 0, 0.028099814, 0, 0.016587651, 0, 0, 0.01925449, 0, 0.266989242, 0, 0.081819296, 0.081030143, 
-        0.004791663, 0.009176899, 0.071893593, 0.136275387, 0.030715693, 0.071789396, 0.031384498, 0.047690948, 0, 0, 0, 6.5e-5])
+c0_additional_conc = pd.Series([0.09703243, 0, 0, 0.028099814, 0, 0.016587651, 0, 0, 0.01925449, 0, #10
+                                0.266989242, 0, 0.081819296, 0.081030143, 0.004791663, 0.009176899, 0.071893593, 0.136275387, 0.030715693, 0.071789396, #20
+                                0.031384498, 0.047690948, 0, 0, 0, 6.5e-5])
 c0_combined = pd.concat([c0_additional_name, c0_additional_conc], axis=1)
 c0_combined.index = c0_combined[0]
 c0_combined = c0_combined[1]
@@ -383,9 +388,8 @@ for i in range(len(species_list) -1):
         f.write("%s, " %(mcm[c0.index[i]]))
 
 # Add in species with constant concentration
-for i in const_comp:
+for species in const_comp:
     f.write("%s, " %i)
-# Add in for OH
 f.write("%s\n" %(c0.index[len(c0.index) - 1]))
 
 ### Processing for Ct, Compt, injectt
@@ -415,16 +419,16 @@ for col in ct_new.columns:
                 f.write("%f; " %(ct_new[col][row]))
                 break
             f.write("%f, " %(ct_new[col][row]))
+f.write("\n")
 
 # Write Compt
 f.write("Compt = ")
-last = ct.columns[-1]
-for items in ct.columns:
-    if col not in inorganic_list:
-        if items == last:
-            f.write("%s\n" %(mcm[items]))
-            break
-        f.write("%s, " %(mcm[items]))
+for i in range(len(ct_new.columns)-2):
+    if ct_new.columns[i] not in inorganic_list:
+        if ct_new.columns[i+1] not in inorganic_list: 
+            f.write("%s, " %(mcm[ct_new.columns[i]]))
+        else:
+            f.write("%s\n" %(mcm[ct_new.columns[i]]))
 
 # Write injectt
 f.write("injectt = ")
@@ -452,14 +456,14 @@ else:
     f.write("space_mode = log\n")
     
 # Write mean_rad
-if toggle_particle == True:
+if toggle_particle == True and len(conv_particle) > 1:
     f.write("mean_rad = ")
     for i in range(len(conv_particle.index) - 1):
         f.write("%f; " %((upper_part_size + lower_part_size)/2))
     f.write("%f\n" %((upper_part_size + lower_part_size)/2))
 
 # Write std
-if toggle_particle == True:
+if toggle_particle == True and len(conv_particle) > 1:
     f.write("std = ")
     for i in range(len(conv_particle.index) - 1):
         f.write("%f; " %(1.2))
