@@ -65,9 +65,11 @@ tracked_comp = "OH, O3, HONO"
 # these 25 species are not measured in 2011-2012, hence not estimated for
 # these 25 species are measured in TD-GC/MS
 # Therefore, the median concentration of these 25 species for 9 days in Sep.-Oct. 2021 are used and set as constant
-const_comp = ["BENZAL", "BUTACID", "C5H11CHO", "C6H13CHO", "CYHEXONE", "DCBENE", "DIETETHER", "DIME35EB", "DMC", "ETHACET",  #10
-            "HEX1ENE", "HEX3ONE", "IPROPOL", "LIMONENE", "M3F", "MACR", "METHACET", "MIBK", "MPRK", "NBUTACET", #20
-            "NC11H24", "NC12H26", "PENTACID", "SBUTACET", "THEX2ENE"] #25
+# DCBENE does not have any reaction in MCM inventory -> to be removed. In total, there are 25-1=24 species from TDGCMS
+const_comp = ["BENZAL", "BUTACID", "C5H11CHO", "C6H13CHO", "CYHEXONE", #"DCBENE", 
+              "DIETETHER", "DIME35EB", "DMC", "ETHACET",  #10
+              "HEX1ENE", "HEX3ONE", "IPROPOL", "LIMONENE", "M3F", "MACR", "METHACET", "MIBK", "MPRK", "NBUTACET", #20
+              "NC11H24", "NC12H26", "PENTACID", "SBUTACET", "THEX2ENE"] #25
 
 # Insert the desired the species
 # Overlapping species between PTRMS & TDGCMS, and required to use TDGCMS data has been scaled by a constant ratio
@@ -367,10 +369,12 @@ f.write("%d\n" %(Rh_array[0][len(Rh_array[0]) - 1]))
 # Write for C0 and Comp0
 c0 = result.iloc[0, :len(result.columns)]
 # Add constant concentration in C0
-c0_additional_name = pd.Series(["BENZAL", "BUTACID", "C5H11CHO", "C6H13CHO", "CYHEXONE", "DCBENE", "DIETETHER", "DIME35EB", "DMC", "ETHACET",  #10
-            "HEX1ENE", "HEX3ONE", "IPROPOL", "LIMONENE", "M3F", "MACR", "METHACET", "MIBK", "MPRK", "NBUTACET", #20
-            "NC11H24", "NC12H26", "PENTACID", "SBUTACET", "THEX2ENE", 'OH'])
-c0_additional_conc = pd.Series([0.09703243, 0, 0, 0.028099814, 0, 0.016587651, 0, 0, 0.01925449, 0, #10
+c0_additional_name = pd.Series(["BENZAL", "BUTACID", "C5H11CHO", "C6H13CHO", "CYHEXONE", #"DCBENE", 
+                                "DIETETHER", "DIME35EB", "DMC", "ETHACET",  #10
+                                "HEX1ENE", "HEX3ONE", "IPROPOL", "LIMONENE", "M3F", "MACR", "METHACET", "MIBK", "MPRK", "NBUTACET", #20
+                                "NC11H24", "NC12H26", "PENTACID", "SBUTACET", "THEX2ENE", 'OH'])
+c0_additional_conc = pd.Series([0.09703243, 0, 0, 0.028099814, 0, #0.016587651, 
+                                0, 0, 0.01925449, 0, #10
                                 0.266989242, 0, 0.081819296, 0.081030143, 0.004791663, 0.009176899, 0.071893593, 0.136275387, 0.030715693, 0.071789396, #20
                                 0.031384498, 0.047690948, 0, 0, 0, 6.5e-5])
 c0_combined = pd.concat([c0_additional_name, c0_additional_conc], axis=1)
@@ -384,12 +388,12 @@ for i in range(len(c0) -1):
 f.write("%f\n" %(c0[len(c0) - 1]))
 
 f.write("Comp0 = ")
-for i in range(len(species_list) -1):
+for i in range(len(species_list)):
         f.write("%s, " %(mcm[c0.index[i]]))
 
 # Add in species with constant concentration
 for species in const_comp:
-    f.write("%s, " %i)
+    f.write("%s, " %species)
 f.write("%s\n" %(c0.index[len(c0.index) - 1]))
 
 ### Processing for Ct, Compt, injectt
@@ -407,19 +411,20 @@ ct_new = ct_new.iloc[1: , :]
 
 # Write Ct
 f.write("Ct = ")
-last_col = ct_new.columns[-1]
+for col in ct_new.columns:
+    if col not in inorganic_list:
+        last_col = col
 last_row = ct_new.index[-1]
 for col in ct_new.columns:
     if col not in inorganic_list:
         for row in ct_new.index:
+            f.write("%f, "%(ct_new[col][row]))
             if (col == last_col and row == last_row):
                 f.write("%f\n" %(ct_new[col][row]))
-                break
+                break        
             if row == last_row:
                 f.write("%f; " %(ct_new[col][row]))
                 break
-            f.write("%f, " %(ct_new[col][row]))
-f.write("\n")
 
 # Write Compt
 f.write("Compt = ")
