@@ -15,14 +15,14 @@ start_time = pd.to_datetime('2020-11-20 15:00:00')
 end_time = pd.to_datetime('2020-11-20 15:59:00')
 
 # Input file_name for model variable input
-file_name = "20Nov_1500_1559_20bins.txt"
+file_name = "20Nov_1500_1559_40bins.txt"
 
 # Desired VOC data resolution input. For example, input of VOC every 5 min
 resolution = 300 #every 5min
 index = list(range(0,(end_time.hour-start_time.hour+1)*60*60, resolution))
 
 # Enter number_size_bins
-number_size_bins = 20
+number_size_bins = 40
 
 # Set upper and lower bounds (um)
 lower_part_size = 0.002*1000
@@ -414,18 +414,22 @@ f.write("Ct = ")
 for col in ct_new.columns:
     if col not in inorganic_list:
         last_col = col
+
 last_row = ct_new.index[-1]
 for col in ct_new.columns:
     if col not in inorganic_list:
         for row in ct_new.index:
-            f.write("%f, "%(ct_new[col][row]))
             if (col == last_col and row == last_row):
                 f.write("%f\n" %(ct_new[col][row]))
-                break        
+                break
             if row == last_row:
                 f.write("%f; " %(ct_new[col][row]))
                 break
-
+            else: f.write("%f, "%(ct_new[col][row]))
+             
+#if (col == last_col and row == last_row):
+                  #  f.write("%f\n" %(ct_new[col][row]))
+                   # break
 # Write Compt
 f.write("Compt = ")
 for i in range(len(ct_new.columns)-2):
