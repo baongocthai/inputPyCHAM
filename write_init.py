@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-
+# All initial & constant variables which does not require external inputs
 def write_init(file_name, start_time, end_time, update_step, umsp_up, p_init, lat, lon, 
                 DayOfYear, daytime_start, light_time, light_status, coag_on):
 
