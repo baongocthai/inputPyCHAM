@@ -73,13 +73,13 @@ def write_conc(file_name, result, start_time, inorganic_list, mcm, index, specie
     for col in ct_new.columns:
         if col not in inorganic_list:
             for row in ct_new.index:
-                f.write("%f, "%(ct_new[col][row]))
                 if (col == last_col and row == last_row):
-                    f.write("%f\n" %(ct_new[col][row]))
-                    break        
+                  f.write("%f\n" %(ct_new[col][row]))
+                  break
                 if row == last_row:
-                    f.write("%f; " %(ct_new[col][row]))
-                    break
+                  f.write("%f; " %(ct_new[col][row]))
+                  break
+                else: f.write("%f, "%(ct_new[col][row]))
 
     # Write Compt
     f.write("Compt = ")
