@@ -8,7 +8,7 @@ import input_main
 
 # Set working directory
 import os
-folder_name = r'C:\Users\Aldrian Jerriko\Desktop\Aerosol\Program\PyCHAM Model Variable Codes\Input FIles'
+folder_name = r'C:\Users\janet\Documents\nBox\SOAFP\6. PyCHAM simulation\Input\Input'
 os.chdir(folder_name)
 
 # Input time manually: Format: 'year-month-day hour:minute:second')
@@ -105,7 +105,7 @@ species_list = ["Chloromethane", "Dichloro.methane", "Ethyl.nitrate", "Pinic.aci
                 "IC3H7NO3", "NC4H10", "NC10H22","NC7H16", "PBENZ",#80
                 "NC6H14", "NC9H20", "NC8H18", "NC5H12", "NC3H7NO3", #85
                 "C3H8","OETHTOL", "METHTOL", "PETHTOL", #89
-                # "CHCL3", #90 can be estimated from 2011-2012
+                "CHCL3", #90 can be estimated from 2011-2012
                 "NO2", "O3", "SO2", "CO"] # Inorganic species
 '''
 species_list = ['APINENE','Toluene', "C2H4", "Propene", "Formaldehyde", "OXYL", "Acetaldehyde", "C4H6", "Isoprene",
