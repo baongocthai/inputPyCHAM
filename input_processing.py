@@ -133,6 +133,11 @@ def proc_particle(pb, toggle_log, lower_part_size, upper_part_size, number_size_
     conv_particle = conv_particle.iloc[:,:0]
 
     # Classify according to size
+    # Change all variables into diameter (SMPS data use Dp = diameter)
+    rad_bounds = rad_bounds*2
+    rwid = rwid*2
+    x_output = x_output*2
+    
     i=0
     while i < (len(rad_bounds)-1):
         temp = np.zeros(len(particle.index))
