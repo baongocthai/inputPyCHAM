@@ -5,4 +5,4 @@ Prepare inputs for PyCHAM
 - number concentration (dN) per size bins 
 Updates (25 Feb. 2022)
 - Scripts are segregated into modules for ease of future changes & debuggings
-- Variables can be changed from input.py, calling other modules for data processing & write-up of model variable file
+- Variables can be changed from PyCham input.py, calling other modules for data processing & write-up of model variable file
