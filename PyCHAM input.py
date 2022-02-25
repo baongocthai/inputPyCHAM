@@ -26,8 +26,8 @@ index = list(range(0,(end_time.hour-start_time.hour+1)*60*60, resolution))
 number_size_bins = 20
 
 # Set upper and lower bounds (um)
-lower_part_size = 0.002*1000
-upper_part_size = 0.760*1000
+lower_part_size = 0.001*1000
+upper_part_size = 0.380*1000
 
 ### Other parameters #########################################################################################
 ##############################################################################################################
